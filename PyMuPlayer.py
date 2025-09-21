@@ -91,6 +91,20 @@ def verify_location():
         location = HOME
         save_setting("location", location)
 
+# App
+app = QApplication(sys.argv)
+window = QMainWindow()
+icon = QIcon(str(Path(__file__).parent / "Icon.png"))
+app.setWindowIcon(icon)
+window.setWindowIcon(icon)
+
+# Check if a location was passed
+if len(sys.argv) > 1:
+    arg_location = Path(sys.argv[1]).expanduser().resolve()
+    if arg_location.is_dir():
+        location = str(arg_location)
+        save_setting("location", location)
+
 verify_location()
 current = 0
 entries = [
@@ -103,20 +117,12 @@ entries = [
 entries_sorted = sorted(
     entries, key=lambda f: (not f.is_dir(), f.name.lower())
 )
-
 files = [f.name for f in entries_sorted]
 index = -1
 is_muted = False
 is_playing = False
 length = 0
 title = ""
-
-# App
-app = QApplication(sys.argv)
-window = QMainWindow()
-icon = QIcon(str(Path(__file__).parent / "Icon.png"))
-app.setWindowIcon(icon)
-window.setWindowIcon(icon)
 
 if not settings.value("geometry"):
     screen = app.primaryScreen().size()
