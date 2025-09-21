@@ -43,5 +43,5 @@ Copyright (c) 2025 Richard Knausenberger
 
 ---
 
-## License
+### License
 This project is licensed under the **GNU GPL v3** - see the [LICENSE](LICENSE) file for details.
