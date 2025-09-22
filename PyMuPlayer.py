@@ -22,7 +22,11 @@ from PyQt6.QtCore import (
     QUrl,
     Qt,
 )
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import (
+    QIcon,
+    QKeySequence,
+    QShortcut,
+)
 from PyQt6.QtMultimedia import (
     QAudioOutput,
     QMediaPlayer,
@@ -45,9 +49,11 @@ import sys
 EXTENSIONS = {".aac", ".aif", ".aiff", ".flac", ".mp3", ".ogg", ".wav"}
 HOME = str(Path.home())
 MIN_WIDTH = 300
+SEEK_STEP = 10
 SPACER_LARGE = 30
 SPACER_MEDIUM = 12
 SPACER_SMALL = 2
+VOLUME_STEP = 5
 
 class SliderClick(QObject):
     """Click on QSlider"""
@@ -235,6 +241,14 @@ def change_time(time: int):
     """Change the value of the time bar"""
     player.setPosition(time * 1000)
 
+def seek_forward():
+    """Seek forward"""
+    player.setPosition(player.position() + SEEK_STEP * 1000)
+
+def seek_backward():
+    """Seek backward"""
+    player.setPosition(max(0, player.position() - SEEK_STEP *1000))
+
 def update_location_label():
     """Update the location label text"""
     max_width = (
@@ -266,6 +280,16 @@ def mute():
     is_muted = not is_muted
     update_mute_icon()
     output.setMuted(is_muted)
+
+def volume_up():
+    """Increase the volume"""
+    new_volume = min(100, volume + VOLUME_STEP)
+    change_volume(new_volume)
+
+def volume_down():
+    """Decrease the volume"""
+    new_volume = max(0, volume - VOLUME_STEP)
+    change_volume(new_volume)
 
 def update_files():
     """Update the files in the list"""
@@ -453,5 +477,55 @@ widget.setLayout(layout)
 window.setCentralWidget(widget)
 window.show()
 app.aboutToQuit.connect(save_window_geometry)
+
+# Shortcuts
+shortcut_quit = QShortcut(QKeySequence("Ctrl+Q"), window)
+shortcut_quit.activated.connect(app.quit)
+shortcut_previous = QShortcut(QKeySequence("J"), window)
+shortcut_previous.activated.connect(previous)
+back_button.setToolTip("J")
+shortcut_stop = QShortcut(QKeySequence("S"), window)
+shortcut_stop.activated.connect(stop)
+stop_button.setToolTip("S")
+shortcut_play_pause = QShortcut(QKeySequence("Space"), window)
+shortcut_play_pause.activated.connect(play_pause)
+shortcut_play_pause_alt = QShortcut(QKeySequence("K"), window)
+shortcut_play_pause_alt.activated.connect(play_pause)
+play_pause_button.setToolTip("Space, K")
+shortcut_next = QShortcut(QKeySequence("L"), window)
+shortcut_next.activated.connect(next)
+forward_button.setToolTip("L")
+shortcut_right = QShortcut(QKeySequence("Right"), window)
+shortcut_right.activated.connect(seek_forward)
+shortcut_left = QShortcut(QKeySequence("Left"), window)
+shortcut_left.activated.connect(seek_backward)
+shortcut_home = QShortcut(QKeySequence("H"), window)
+shortcut_home.activated.connect(home)
+home_button.setToolTip("H")
+shortcut_refresh = QShortcut(QKeySequence("F5"), window)
+shortcut_refresh.activated.connect(update_files)
+refresh_button.setToolTip("F5")
+shortcut_up = QShortcut(QKeySequence("Backspace"), window)
+shortcut_up.activated.connect(go_up)
+up_button.setToolTip("Backspace")
+shortcut_mute = QShortcut(QKeySequence("M"), window)
+shortcut_mute.activated.connect(mute)
+mute_button.setToolTip("M")
+shortcut_volume_up = QShortcut(QKeySequence("."), window)
+shortcut_volume_up.activated.connect(volume_up)
+shortcut_volume_down = QShortcut(QKeySequence(","), window)
+shortcut_volume_down.activated.connect(volume_down)
+shortcut_enter = QShortcut(QKeySequence("Return"), files_list)
+shortcut_enter.activated.connect(lambda: double_click(files_list.currentItem()))
+shortcut_down = QShortcut(QKeySequence("Down"), window)
+shortcut_down.setContext(Qt.ShortcutContext.ApplicationShortcut)
+shortcut_down.activated.connect(lambda: files_list.setCurrentRow(
+    min(files_list.currentRow() + 1, files_list.count() - 1)
+))
+shortcut_up = QShortcut(QKeySequence("Up"), window)
+shortcut_up.setContext(Qt.ShortcutContext.ApplicationShortcut)
+shortcut_up.activated.connect(lambda: files_list.setCurrentRow(
+    max(files_list.currentRow() - 1, 0)
+))
 
 app.exec()
