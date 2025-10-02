@@ -23,6 +23,7 @@ from PyQt6.QtCore import (
     Qt,
 )
 from PyQt6.QtGui import (
+    QDesktopServices,
     QIcon,
     QKeySequence,
     QShortcut,
@@ -46,8 +47,15 @@ from PyQt6.QtWidgets import (
 )
 import sys
 
+AUTHOR = "Richard Knausenberger"
+BUG_REPORT_URL = "https://github.com/Liemaeu/PyMuPlayer/issues/new"
+COPYRIGHT_YEARS = "2025"
+EMAIL = "liemaeu@gmail.com"
 EXTENSIONS = {".aac", ".aif", ".aiff", ".flac", ".mp3", ".ogg", ".wav"}
 HOME = str(Path.home())
+LICENSE = "https://www.gnu.org/licenses/gpl-3.0.html.en"
+LICENSE_NAME = "GPL-3.0"
+LINK_URL = "https://github.com/Liemaeu/PyMuPlayer"
 MIN_WIDTH = 300
 SEEK_STEP = 10
 SPACER_LARGE = 30
@@ -103,6 +111,42 @@ window = QMainWindow()
 icon = QIcon(str(Path(__file__).parent / "Icon.png"))
 app.setWindowIcon(icon)
 window.setWindowIcon(icon)
+
+# Settings
+settings_window = QWidget()
+settings_window.setWindowTitle("Settings")
+
+# About
+about_window = QWidget()
+about_window.setWindowTitle("About")
+about_layout = QVBoxLayout()
+about_title = QLabel("PyMu Player")
+about_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+about_title.setStyleSheet("font-weight: bold")
+about_layout.addWidget(about_title)
+about_layout.addSpacing(SPACER_SMALL)
+about_link = QLabel('<a href="' + LINK_URL + '">GitHub</a>')
+about_link.setAlignment(Qt.AlignmentFlag.AlignCenter)
+about_link.setOpenExternalLinks(True)
+about_layout.addWidget(about_link)
+about_layout.addSpacing(SPACER_MEDIUM)
+about_author = QLabel("Author: " + AUTHOR)
+about_layout.addWidget(about_author)
+about_email = QLabel(
+    'Email: <a href="mailto:' + EMAIL + '?subject=PyMu%20Player:">' + EMAIL + '</a>'
+)
+about_email.setOpenExternalLinks(True)
+about_layout.addWidget(about_email)
+about_license = QLabel(
+    'License: <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
+)
+about_license.setOpenExternalLinks(True)
+about_layout.addWidget(about_license)
+about_layout.addSpacing(SPACER_SMALL)
+about_copyright = QLabel("© " + COPYRIGHT_YEARS)
+about_copyright.setStyleSheet("font-style: italic")
+about_layout.addWidget(about_copyright)
+about_window.setLayout(about_layout)
 
 # Check if a location was passed
 if len(sys.argv) > 1:
@@ -224,6 +268,7 @@ def update_play_pause_icon():
         QStyle.StandardPixmap.SP_MediaPause if is_playing
         else QStyle.StandardPixmap.SP_MediaPlay)
     )
+    play_pause_button.setToolTip("Pause (Space, K)" if is_playing else "Play (Space, K)")
 
 def next():
     """Skip forward button"""
@@ -273,6 +318,7 @@ def update_mute_icon():
         QStyle.StandardPixmap.SP_MediaVolumeMuted if is_muted
         else QStyle.StandardPixmap.SP_MediaVolume
     ))
+    mute_button.setToolTip("Un-Mute (M)" if is_muted else "Mute (M)")
 
 def mute():
     """Mute the volume"""
@@ -364,6 +410,22 @@ def finished(status):
     """Finished playing an audio file"""
     if status == QMediaPlayer.MediaStatus.EndOfMedia:
         next()
+
+def show_settings():
+    """Open the settings window"""
+    settings_window.show()
+    settings_window.raise_()
+    settings_window.activateWindow()
+
+def show_about():
+    """Open the about window"""
+    about_window.show()
+    about_window.raise_()
+    about_window.activateWindow()
+
+def report_bug():
+    """Report a bug"""
+    QDesktopServices.openUrl(QUrl(BUG_REPORT_URL))
 
 # Top bar
 back_button = QPushButton()
@@ -478,39 +540,49 @@ window.setCentralWidget(widget)
 window.show()
 app.aboutToQuit.connect(save_window_geometry)
 
+# Menu bar
+menu_bar = window.menuBar()
+file_menu = menu_bar.addMenu("File")
+settings_action = file_menu.addAction("Settings")
+settings_action.triggered.connect(show_settings)
+exit_action = file_menu.addAction("Exit")
+exit_action.triggered.connect(app.quit)
+file_menu = menu_bar.addMenu("Bookmarks")
+help_menu = menu_bar.addMenu("Help")
+about_action = help_menu.addAction("About")
+about_action.triggered.connect(show_about)
+bug_report_action = help_menu.addAction("Report a Bug")
+bug_report_action.triggered.connect(report_bug)
+
 # Shortcuts
-shortcut_quit = QShortcut(QKeySequence("Ctrl+Q"), window)
-shortcut_quit.activated.connect(app.quit)
-shortcut_previous = QShortcut(QKeySequence("J"), window)
-shortcut_previous.activated.connect(previous)
-back_button.setToolTip("J")
+shortcut_back = QShortcut(QKeySequence("J"), window)
+shortcut_back.activated.connect(previous)
+back_button.setToolTip("Previous (J)")
 shortcut_stop = QShortcut(QKeySequence("S"), window)
 shortcut_stop.activated.connect(stop)
-stop_button.setToolTip("S")
+stop_button.setToolTip("Stop (S)")
 shortcut_play_pause = QShortcut(QKeySequence("Space"), window)
 shortcut_play_pause.activated.connect(play_pause)
 shortcut_play_pause_alt = QShortcut(QKeySequence("K"), window)
 shortcut_play_pause_alt.activated.connect(play_pause)
-play_pause_button.setToolTip("Space, K")
-shortcut_next = QShortcut(QKeySequence("L"), window)
-shortcut_next.activated.connect(next)
-forward_button.setToolTip("L")
+shortcut_forward = QShortcut(QKeySequence("L"), window)
+shortcut_forward.activated.connect(next)
+forward_button.setToolTip("Next (L)")
 shortcut_right = QShortcut(QKeySequence("Right"), window)
 shortcut_right.activated.connect(seek_forward)
 shortcut_left = QShortcut(QKeySequence("Left"), window)
 shortcut_left.activated.connect(seek_backward)
 shortcut_home = QShortcut(QKeySequence("H"), window)
 shortcut_home.activated.connect(home)
-home_button.setToolTip("H")
+home_button.setToolTip("Home (H)")
 shortcut_refresh = QShortcut(QKeySequence("F5"), window)
 shortcut_refresh.activated.connect(update_files)
-refresh_button.setToolTip("F5")
+refresh_button.setToolTip("Refresh (F5)")
 shortcut_up = QShortcut(QKeySequence("Backspace"), window)
 shortcut_up.activated.connect(go_up)
-up_button.setToolTip("Backspace")
+up_button.setToolTip("Up (Backspace)")
 shortcut_mute = QShortcut(QKeySequence("M"), window)
 shortcut_mute.activated.connect(mute)
-mute_button.setToolTip("M")
 shortcut_volume_up = QShortcut(QKeySequence("."), window)
 shortcut_volume_up.activated.connect(volume_up)
 shortcut_volume_down = QShortcut(QKeySequence(","), window)
@@ -527,5 +599,11 @@ shortcut_up.setContext(Qt.ShortcutContext.ApplicationShortcut)
 shortcut_up.activated.connect(lambda: files_list.setCurrentRow(
     max(files_list.currentRow() - 1, 0)
 ))
+settings_action.setShortcut(QKeySequence("Ctrl+P"))
+exit_action.setShortcut(QKeySequence("Ctrl+Q"))
+about_action.setShortcut(QKeySequence("F1"))
+shortcut_close_about = QShortcut(QKeySequence("Escape"), about_window)
+shortcut_close_about.activated.connect(about_window.close)
+bug_report_action.setShortcut(QKeySequence("Ctrl+Shift+B"))
 
 app.exec()
