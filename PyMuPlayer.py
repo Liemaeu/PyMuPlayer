@@ -16,9 +16,11 @@
 
 from pathlib import Path
 from PyQt6.QtCore import (
+    QCoreApplication,
     QEvent,
     QObject,
     QSettings,
+    QTranslator,
     QUrl,
     Qt,
 )
@@ -34,6 +36,7 @@ from PyQt6.QtMultimedia import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -112,13 +115,57 @@ icon = QIcon(str(Path(__file__).parent / "Icon.png"))
 app.setWindowIcon(icon)
 window.setWindowIcon(icon)
 
+# Lanugage
+language = language = settings.value("language", "en")
+
+def add_translator():
+    """Add a translator"""
+    global language, translator
+    app.removeTranslator(translator)
+    translator = QTranslator()
+    if translator.load(f"translations_{language}.qm"):
+        app.installTranslator(translator)
+
+# Translation
+translator = QTranslator()
+add_translator()
+
+def save_settings():
+    """Save the settings of the settings window"""
+    global language
+    save_setting("language", settings_language_combo_box.currentData())
+    language = settings_language_combo_box.currentData()
+    update_translation()
+    settings_window.close()
+
+def set_language(value: str):
+    """Set the value of the language setting"""
+    index = settings_language_combo_box.findData(value)
+    if index != -1:
+        settings_language_combo_box.setCurrentIndex(index)
+
 # Settings
 settings_window = QWidget()
-settings_window.setWindowTitle("Settings")
+settings_window.setWindowTitle(QCoreApplication.translate("Settings", "Settings"))
+settings_layout = QVBoxLayout()
+settings_language_layout = QHBoxLayout()
+settings_language_label = QLabel(QCoreApplication.translate("Settings", "Language") + ":")
+settings_language_layout.addWidget(settings_language_label)
+settings_language_layout.addSpacing(SPACER_LARGE)
+settings_language_combo_box = QComboBox()
+settings_language_combo_box.addItem("English", "en")
+settings_language_combo_box.addItem("Deutsch", "de")
+set_language(settings.value("language", "en"))
+settings_language_layout.addWidget(settings_language_combo_box)
+settings_layout.addLayout(settings_language_layout)
+settings_save_button = QPushButton(QCoreApplication.translate("Settings", "Save"))
+settings_save_button.clicked.connect(save_settings)
+settings_layout.addWidget(settings_save_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+settings_window.setLayout(settings_layout)
 
 # About
 about_window = QWidget()
-about_window.setWindowTitle("About")
+about_window.setWindowTitle(QCoreApplication.translate("About", "About"))
 about_layout = QVBoxLayout()
 about_title = QLabel("PyMu Player")
 about_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -130,7 +177,7 @@ about_link.setAlignment(Qt.AlignmentFlag.AlignCenter)
 about_link.setOpenExternalLinks(True)
 about_layout.addWidget(about_link)
 about_layout.addSpacing(SPACER_MEDIUM)
-about_author = QLabel("Author: " + AUTHOR)
+about_author = QLabel(QCoreApplication.translate("About", "Author") + ": " + AUTHOR)
 about_layout.addWidget(about_author)
 about_email = QLabel(
     'Email: <a href="mailto:' + EMAIL + '?subject=PyMu%20Player:">' + EMAIL + '</a>'
@@ -138,7 +185,7 @@ about_email = QLabel(
 about_email.setOpenExternalLinks(True)
 about_layout.addWidget(about_email)
 about_license = QLabel(
-    'License: <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
+    QCoreApplication.translate("About", "License") + ': <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
 )
 about_license.setOpenExternalLinks(True)
 about_layout.addWidget(about_license)
@@ -268,7 +315,7 @@ def update_play_pause_icon():
         QStyle.StandardPixmap.SP_MediaPause if is_playing
         else QStyle.StandardPixmap.SP_MediaPlay)
     )
-    play_pause_button.setToolTip("Pause (Space, K)" if is_playing else "Play (Space, K)")
+    play_pause_button.setToolTip(QCoreApplication.translate("App", "Pause (Space, K)") if is_playing else QCoreApplication.translate("App", "Play (Space, K)"))
 
 def next():
     """Skip forward button"""
@@ -318,7 +365,7 @@ def update_mute_icon():
         QStyle.StandardPixmap.SP_MediaVolumeMuted if is_muted
         else QStyle.StandardPixmap.SP_MediaVolume
     ))
-    mute_button.setToolTip("Un-Mute (M)" if is_muted else "Mute (M)")
+    mute_button.setToolTip(QCoreApplication.translate("App", "Un-Mute (M)") if is_muted else QCoreApplication.translate("App", "Mute (M)"))
 
 def mute():
     """Mute the volume"""
@@ -413,9 +460,38 @@ def finished(status):
 
 def show_settings():
     """Open the settings window"""
+    global language
+    set_language(language)
     settings_window.show()
     settings_window.raise_()
     settings_window.activateWindow()
+
+def update_translation():
+    """Update the translation"""
+    add_translator()
+    update_play_pause_icon()
+    update_mute_icon()
+    back_button.setToolTip(QCoreApplication.translate("App", "Previous (J)"))
+    stop_button.setToolTip(QCoreApplication.translate("App", "Stop (S)"))
+    forward_button.setToolTip(QCoreApplication.translate("App", "Next (L)"))
+    home_button.setToolTip(QCoreApplication.translate("App", "Home (H)"))
+    refresh_button.setToolTip(QCoreApplication.translate("App", "Refresh (F5)"))
+    up_button.setToolTip(QCoreApplication.translate("App", "Up (Backspace)"))
+    file_menu.setTitle(QCoreApplication.translate("Menu", "File"))
+    settings_action.setText(QCoreApplication.translate("Menu", "Settings"))
+    settings_window.setWindowTitle(QCoreApplication.translate("Settings", "Settings"))
+    settings_language_label.setText(QCoreApplication.translate("Settings", "Language") + ":")
+    settings_save_button.setText(QCoreApplication.translate("Settings", "Save"))
+    exit_action.setText(QCoreApplication.translate("Menu", "Exit"))
+    bookmark_menu.setTitle(QCoreApplication.translate("Menu", "Bookmarks"))
+    help_menu.setTitle(QCoreApplication.translate("Menu", "Help"))
+    about_action.setText(QCoreApplication.translate("Menu", "About"))
+    about_window.setWindowTitle(QCoreApplication.translate("About", "About"))
+    about_author.setText(QCoreApplication.translate("About", "Author") + ": " + AUTHOR)
+    about_license.setText(
+        QCoreApplication.translate("About", "License") + ': <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
+    )
+    bug_report_action.setText(QCoreApplication.translate("Menu", "Report a Bug"))
 
 def show_about():
     """Open the about window"""
@@ -441,6 +517,7 @@ stop_button.setIcon(window.style().standardIcon(
 stop_button.clicked.connect(stop)
 stop_button.setEnabled(False)
 play_pause_button = QPushButton()
+play_pause_button.setEnabled(False)
 update_play_pause_icon()
 play_pause_button.clicked.connect(play_pause)
 forward_button = QPushButton()
@@ -542,45 +619,39 @@ app.aboutToQuit.connect(save_window_geometry)
 
 # Menu bar
 menu_bar = window.menuBar()
-file_menu = menu_bar.addMenu("File")
-settings_action = file_menu.addAction("Settings")
+file_menu = menu_bar.addMenu(QCoreApplication.translate("Menu", "File"))
+settings_action = file_menu.addAction(QCoreApplication.translate("Menu", "Settings"))
 settings_action.triggered.connect(show_settings)
-exit_action = file_menu.addAction("Exit")
+exit_action = file_menu.addAction(QCoreApplication.translate("Menu", "Exit"))
 exit_action.triggered.connect(app.quit)
-file_menu = menu_bar.addMenu("Bookmarks")
-help_menu = menu_bar.addMenu("Help")
-about_action = help_menu.addAction("About")
+bookmark_menu = menu_bar.addMenu(QCoreApplication.translate("Menu", "Bookmarks"))
+help_menu = menu_bar.addMenu(QCoreApplication.translate("Menu", "Help"))
+about_action = help_menu.addAction(QCoreApplication.translate("Menu", "About"))
 about_action.triggered.connect(show_about)
-bug_report_action = help_menu.addAction("Report a Bug")
+bug_report_action = help_menu.addAction(QCoreApplication.translate("Menu", "Report a Bug"))
 bug_report_action.triggered.connect(report_bug)
 
 # Shortcuts
 shortcut_back = QShortcut(QKeySequence("J"), window)
 shortcut_back.activated.connect(previous)
-back_button.setToolTip("Previous (J)")
 shortcut_stop = QShortcut(QKeySequence("S"), window)
 shortcut_stop.activated.connect(stop)
-stop_button.setToolTip("Stop (S)")
 shortcut_play_pause = QShortcut(QKeySequence("Space"), window)
 shortcut_play_pause.activated.connect(play_pause)
 shortcut_play_pause_alt = QShortcut(QKeySequence("K"), window)
 shortcut_play_pause_alt.activated.connect(play_pause)
 shortcut_forward = QShortcut(QKeySequence("L"), window)
 shortcut_forward.activated.connect(next)
-forward_button.setToolTip("Next (L)")
 shortcut_right = QShortcut(QKeySequence("Right"), window)
 shortcut_right.activated.connect(seek_forward)
 shortcut_left = QShortcut(QKeySequence("Left"), window)
 shortcut_left.activated.connect(seek_backward)
 shortcut_home = QShortcut(QKeySequence("H"), window)
 shortcut_home.activated.connect(home)
-home_button.setToolTip("Home (H)")
 shortcut_refresh = QShortcut(QKeySequence("F5"), window)
 shortcut_refresh.activated.connect(update_files)
-refresh_button.setToolTip("Refresh (F5)")
 shortcut_up = QShortcut(QKeySequence("Backspace"), window)
 shortcut_up.activated.connect(go_up)
-up_button.setToolTip("Up (Backspace)")
 shortcut_mute = QShortcut(QKeySequence("M"), window)
 shortcut_mute.activated.connect(mute)
 shortcut_volume_up = QShortcut(QKeySequence("."), window)
@@ -604,6 +675,12 @@ exit_action.setShortcut(QKeySequence("Ctrl+Q"))
 about_action.setShortcut(QKeySequence("F1"))
 shortcut_close_about = QShortcut(QKeySequence("Escape"), about_window)
 shortcut_close_about.activated.connect(about_window.close)
+shortcut_close_settings = QShortcut(QKeySequence("Escape"), settings_window)
+shortcut_close_settings.activated.connect(settings_window.close)
 bug_report_action.setShortcut(QKeySequence("Ctrl+Shift+B"))
 
+# Load translation
+update_translation()
+
+# Run the app
 app.exec()
