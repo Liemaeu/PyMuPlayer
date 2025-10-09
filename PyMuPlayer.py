@@ -25,6 +25,7 @@ from PyQt6.QtCore import (
     Qt,
 )
 from PyQt6.QtGui import (
+    QAction,
     QDesktopServices,
     QIcon,
     QKeySequence,
@@ -185,7 +186,8 @@ about_email = QLabel(
 about_email.setOpenExternalLinks(True)
 about_layout.addWidget(about_email)
 about_license = QLabel(
-    QCoreApplication.translate("About", "License") + ': <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
+    QCoreApplication.translate("About", "License")
+    + ': <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
 )
 about_license.setOpenExternalLinks(True)
 about_layout.addWidget(about_license)
@@ -315,7 +317,10 @@ def update_play_pause_icon():
         QStyle.StandardPixmap.SP_MediaPause if is_playing
         else QStyle.StandardPixmap.SP_MediaPlay)
     )
-    play_pause_button.setToolTip(QCoreApplication.translate("App", "Pause (Space, K)") if is_playing else QCoreApplication.translate("App", "Play (Space, K)"))
+    play_pause_button.setToolTip(
+        QCoreApplication.translate("App", "Pause (Space, K)") if is_playing 
+        else QCoreApplication.translate("App", "Play (Space, K)")
+    )
 
 def next():
     """Skip forward button"""
@@ -358,14 +363,56 @@ def update_location_label():
     location_label.setText(text)
     location_label.setToolTip(location)
 
+def update_add_remove_button():
+    """Update the add/remove button icon"""
+    is_bookmark = location in settings.value("bookmarks", [], type=list)
+    add_remove_button.setIcon(window.style().standardIcon(
+        QStyle.StandardPixmap.SP_TrashIcon if is_bookmark
+        else QStyle.StandardPixmap.SP_FileDialogNewFolder)
+    )
+    add_remove_button.setToolTip(
+        QCoreApplication.translate("App", "Remove Bookmark (Ctrl+D)") if is_bookmark
+        else QCoreApplication.translate("App", "Add Bookmark (Ctrl+D)")
+    )
+
+def open_bookmark(path: str):
+    """Open a bookmark location"""
+    global location
+    if not Path(path).is_dir():
+        return
+    location = path
+    change_location()
+
+def update_bookmark_menu():
+    """Update the bookmark menu"""
+    bookmark_menu.clear()
+    bookmarks = settings.value("bookmarks", [], type=list)
+    for path in bookmarks:
+        action = QAction(path, window)
+        action.triggered.connect(lambda checked=False, p=path: open_bookmark(p))
+        bookmark_menu.addAction(action)
+
+def add_remove_bookmark():
+    """Add or remove a bookmark"""
+    bookmarks = settings.value("bookmarks", [], type=list)
+    if location in bookmarks:
+        bookmarks.remove(location)
+    else:
+        bookmarks.append(location)
+    save_setting("bookmarks", bookmarks)
+    update_bookmark_menu()
+    update_add_remove_button()
 
 def update_mute_icon():
     """Update the mute button icon"""
     mute_button.setIcon(window.style().standardIcon(
         QStyle.StandardPixmap.SP_MediaVolumeMuted if is_muted
-        else QStyle.StandardPixmap.SP_MediaVolume
-    ))
-    mute_button.setToolTip(QCoreApplication.translate("App", "Un-Mute (M)") if is_muted else QCoreApplication.translate("App", "Mute (M)"))
+        else QStyle.StandardPixmap.SP_MediaVolume)
+    )
+    mute_button.setToolTip(
+        QCoreApplication.translate("App", "Un-Mute (M)") if is_muted
+        else QCoreApplication.translate("App", "Mute (M)")
+    )
 
 def mute():
     """Mute the volume"""
@@ -405,6 +452,7 @@ def change_location():
     save_setting("location", location)
     update_files()
     update_location_label()
+    update_add_remove_button()
 
 def home():
     """Home button"""
@@ -477,6 +525,7 @@ def update_translation():
     home_button.setToolTip(QCoreApplication.translate("App", "Home (H)"))
     refresh_button.setToolTip(QCoreApplication.translate("App", "Refresh (F5)"))
     up_button.setToolTip(QCoreApplication.translate("App", "Up (Backspace)"))
+    update_add_remove_button()
     file_menu.setTitle(QCoreApplication.translate("Menu", "File"))
     settings_action.setText(QCoreApplication.translate("Menu", "Settings"))
     settings_window.setWindowTitle(QCoreApplication.translate("Settings", "Settings"))
@@ -489,7 +538,8 @@ def update_translation():
     about_window.setWindowTitle(QCoreApplication.translate("About", "About"))
     about_author.setText(QCoreApplication.translate("About", "Author") + ": " + AUTHOR)
     about_license.setText(
-        QCoreApplication.translate("About", "License") + ': <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
+        QCoreApplication.translate("About", "License")
+        + ': <a href="' + LICENSE + '">' + LICENSE_NAME + '</a>'
     )
     bug_report_action.setText(QCoreApplication.translate("Menu", "Report a Bug"))
 
@@ -518,7 +568,6 @@ stop_button.clicked.connect(stop)
 stop_button.setEnabled(False)
 play_pause_button = QPushButton()
 play_pause_button.setEnabled(False)
-update_play_pause_icon()
 play_pause_button.clicked.connect(play_pause)
 forward_button = QPushButton()
 forward_button.setIcon(window.style().standardIcon(
@@ -551,7 +600,6 @@ top_bar.addWidget(length_label)
 
 # Volume settings
 mute_button = QPushButton()
-update_mute_icon()
 mute_button.clicked.connect(mute)
 volume_bar = QSlider(minimum = 0, maximum = 100, value = volume)
 volume_bar.sliderMoved.connect(change_volume)
@@ -580,6 +628,8 @@ up_button.setIcon(window.style().standardIcon(
 up_button.clicked.connect(go_up)
 location_label = QLabel()
 location_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+add_remove_button = QPushButton()
+add_remove_button.clicked.connect(add_remove_bookmark)
 folder_navigation_bar = QHBoxLayout()
 folder_navigation_bar.addWidget(home_button)
 folder_navigation_bar.addWidget(refresh_button)
@@ -589,6 +639,7 @@ folder_navigation_bar.addWidget(
     location_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter
 )
 folder_navigation_bar.addSpacing(SPACER_MEDIUM)
+folder_navigation_bar.addWidget(add_remove_button)
 
 # Folder view
 files_list = QListWidget()
@@ -625,6 +676,7 @@ settings_action.triggered.connect(show_settings)
 exit_action = file_menu.addAction(QCoreApplication.translate("Menu", "Exit"))
 exit_action.triggered.connect(app.quit)
 bookmark_menu = menu_bar.addMenu(QCoreApplication.translate("Menu", "Bookmarks"))
+update_bookmark_menu()
 help_menu = menu_bar.addMenu(QCoreApplication.translate("Menu", "Help"))
 about_action = help_menu.addAction(QCoreApplication.translate("Menu", "About"))
 about_action.triggered.connect(show_about)
@@ -652,6 +704,8 @@ shortcut_refresh = QShortcut(QKeySequence("F5"), window)
 shortcut_refresh.activated.connect(update_files)
 shortcut_up = QShortcut(QKeySequence("Backspace"), window)
 shortcut_up.activated.connect(go_up)
+shortcut_add_remove = QShortcut(QKeySequence("Ctrl+D"), window)
+shortcut_add_remove.activated.connect(add_remove_bookmark)
 shortcut_mute = QShortcut(QKeySequence("M"), window)
 shortcut_mute.activated.connect(mute)
 shortcut_volume_up = QShortcut(QKeySequence("."), window)
