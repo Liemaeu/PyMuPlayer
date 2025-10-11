@@ -29,6 +29,7 @@ from PyQt6.QtGui import (
     QDesktopServices,
     QIcon,
     QKeySequence,
+    QPixmap,
     QShortcut,
 )
 from PyQt6.QtMultimedia import (
@@ -65,6 +66,7 @@ SEEK_STEP = 10
 SPACER_LARGE = 30
 SPACER_MEDIUM = 12
 SPACER_SMALL = 2
+VERSION = "Version 1.0"
 VOLUME_STEP = 5
 
 class SliderClick(QObject):
@@ -168,10 +170,23 @@ settings_window.setLayout(settings_layout)
 about_window = QWidget()
 about_window.setWindowTitle(QCoreApplication.translate("About", "About"))
 about_layout = QVBoxLayout()
+about_image = QLabel()
+about_image_size = int(app.primaryScreen().size().width() * 0.05)
+about_image.setPixmap(QPixmap(str(Path(__file__).parent / "Icon.png")).scaled(
+    about_image_size, about_image_size, Qt.AspectRatioMode.KeepAspectRatio,
+    Qt.TransformationMode.SmoothTransformation
+    )
+)
+about_layout.addWidget(about_image, alignment=Qt.AlignmentFlag.AlignCenter)
+about_layout.addSpacing(SPACER_SMALL)
 about_title = QLabel("PyMu Player")
 about_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 about_title.setStyleSheet("font-weight: bold")
 about_layout.addWidget(about_title)
+about_layout.addSpacing(SPACER_SMALL)
+about_version = QLabel(VERSION)
+about_version.setAlignment(Qt.AlignmentFlag.AlignCenter)
+about_layout.addWidget(about_version)
 about_layout.addSpacing(SPACER_SMALL)
 about_link = QLabel('<a href="' + LINK_URL + '">GitHub</a>')
 about_link.setAlignment(Qt.AlignmentFlag.AlignCenter)
