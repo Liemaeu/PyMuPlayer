@@ -20,6 +20,7 @@ from PyQt6.QtCore import (
     QEvent,
     QObject,
     QSettings,
+    QTimer,
     QTranslator,
     QUrl,
     Qt,
@@ -38,6 +39,7 @@ from PyQt6.QtMultimedia import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -55,6 +57,7 @@ import sys
 AUTHOR = "Richard Knausenberger"
 BUG_REPORT_URL = "https://github.com/Liemaeu/PyMuPlayer/issues/new"
 COPYRIGHT_YEARS = "2025"
+DELAY = 1500
 EMAIL = "liemaeu@gmail.com"
 EXTENSIONS = {".aac", ".aif", ".aiff", ".flac", ".mp3", ".ogg", ".wav"}
 HOME = str(Path.home())
@@ -135,9 +138,11 @@ add_translator()
 
 def save_settings():
     """Save the settings of the settings window"""
-    global language
+    global language, is_delay
     save_setting("language", settings_language_combo_box.currentData())
+    save_setting("delay", settings_delay_checkbox.isChecked())
     language = settings_language_combo_box.currentData()
+    is_delay = settings_delay_checkbox.isChecked()
     update_translation()
     settings_window.close()
 
@@ -161,9 +166,23 @@ settings_language_combo_box.addItem("Deutsch", "de")
 set_language(settings.value("language", "en"))
 settings_language_layout.addWidget(settings_language_combo_box)
 settings_layout.addLayout(settings_language_layout)
+settings_delay_layout = QHBoxLayout()
+settings_delay_label = QLabel(QCoreApplication.translate("Settings", "Delay between Songs") + ":")
+settings_delay_layout.addWidget(settings_delay_label)
+settings_delay_layout.addSpacing(SPACER_LARGE)
+settings_delay_checkbox = QCheckBox()
+settings_delay_checkbox.setChecked(settings.value("auto_next_enabled", False, type=bool))
+settings_delay_layout.addWidget(settings_delay_checkbox)
+settings_layout.addLayout(settings_delay_layout)
+settings_buttons_layout = QHBoxLayout()
+settings_cancel_button = QPushButton(QCoreApplication.translate("Settings", "Cancel"))
+settings_cancel_button.clicked.connect(settings_window.close)
+settings_buttons_layout.addWidget(settings_cancel_button)
+settings_buttons_layout.addStretch()
 settings_save_button = QPushButton(QCoreApplication.translate("Settings", "Save"))
 settings_save_button.clicked.connect(save_settings)
-settings_layout.addWidget(settings_save_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+settings_buttons_layout.addWidget(settings_save_button)
+settings_layout.addLayout(settings_buttons_layout)
 settings_window.setLayout(settings_layout)
 
 # About
@@ -287,9 +306,13 @@ player.setAudioOutput(output)
 player.durationChanged.connect(update_length)
 player.positionChanged.connect(update_current)
 player.mediaStatusChanged.connect(lambda status: finished(status))
+delay_timer = QTimer()
+delay_timer.setSingleShot(True)
+is_delay = settings.value("delay", False, type=bool)
 
 def previous():
     """Back button"""
+    delay_timer.stop()
     if index > 0:
         files_list.setCurrentRow(index - 1)
         double_click(files_list.currentItem())
@@ -297,6 +320,7 @@ def previous():
 def stop():
     """Stop button"""
     global index, is_playing, title
+    delay_timer.stop()
     player.stop()
     is_playing = False
     update_play_pause_icon()
@@ -319,6 +343,7 @@ def play():
 def play_pause():
     """"Play/Pause button"""
     global is_playing
+    delay_timer.stop()
     if is_playing:
         player.pause()
         is_playing = False
@@ -339,6 +364,7 @@ def update_play_pause_icon():
 
 def next():
     """Skip forward button"""
+    delay_timer.stop()
     if index < files_list.count() - 1:
         files_list.setCurrentRow(index + 1)
         double_click(files_list.currentItem())
@@ -489,6 +515,7 @@ def update_window_title():
 def double_click(item: QListWidgetItem):
     """Handle a double click on an audio file or folder"""
     global index, location, title
+    delay_timer.stop()
     selected = Path(location) / item.text()
     if selected.is_dir():
         location = str(selected)
@@ -519,12 +546,22 @@ def update_skip_buttons():
 def finished(status):
     """Finished playing an audio file"""
     if status == QMediaPlayer.MediaStatus.EndOfMedia:
-        next()
+        if is_delay:
+            delay_timer.timeout.connect(delay)
+            delay_timer.start(DELAY)
+        else:
+            next()
+
+def delay():
+    """Play the next song after delay"""
+    delay_timer.timeout.disconnect(delay)
+    next()
 
 def show_settings():
     """Open the settings window"""
     global language
     set_language(language)
+    settings_delay_checkbox.setChecked(is_delay)
     settings_window.show()
     settings_window.raise_()
     settings_window.activateWindow()
@@ -545,6 +582,8 @@ def update_translation():
     settings_action.setText(QCoreApplication.translate("Menu", "Settings"))
     settings_window.setWindowTitle(QCoreApplication.translate("Settings", "Settings"))
     settings_language_label.setText(QCoreApplication.translate("Settings", "Language") + ":")
+    settings_delay_label.setText(QCoreApplication.translate("Settings", "Delay between Songs") + ":")
+    settings_cancel_button.setText(QCoreApplication.translate("Settings", "Cancel"))
     settings_save_button.setText(QCoreApplication.translate("Settings", "Save"))
     exit_action.setText(QCoreApplication.translate("Menu", "Exit"))
     bookmark_menu.setTitle(QCoreApplication.translate("Menu", "Bookmarks"))
