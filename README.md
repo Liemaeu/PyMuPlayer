@@ -4,7 +4,7 @@
 
 <h1 align="center">PyMu Player</h1>
 
-<h2 align="center">A Simple Music Player for GNU/Linux, Windows, macOS & *BSD</h2>
+<h2 align="center">A simple music player for GNU/Linux, Windows, macOS & *BSD</h2>
 
 <br>
 
@@ -13,6 +13,22 @@ Browse your files, play your music. No need to import tracks or playlists. Liste
 Written in Python, using QtMediaPlayer.
 
 ![Screenshot](Screenshot.png)
+
+<br>
+
+**Supported file formats:** .mp3, .wav, .ogg, .aac, .aif, .aiff & .flac
+
+*Note: This depends on the codecs installed on your system.*
+
+- - -
+
+### Features
+
+- Browse your files like with a file manager
+- Save folders as bookmarks for quick access
+- Fully controllable with keyboard shortcuts
+- Optional pause between songs
+- Available in English and German
 
 - - -
 
@@ -44,4 +60,5 @@ Copyright (c) 2025 Richard Knausenberger
 ---
 
 ### License
-This project is licensed under the **GNU GPL v3** - see the [LICENSE](LICENSE) file for details.
+
+This project is licensed under the **GNU GPL v3**. See [LICENSE](LICENSE) for details.
