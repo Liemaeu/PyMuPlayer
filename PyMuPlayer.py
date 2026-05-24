@@ -1,5 +1,5 @@
 # PyMu Player - A simple cross-platform music player
-# Copyright (C) 2025 Richard Knausenberger
+# Copyright (C) 2026 Richard Knausenberger
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

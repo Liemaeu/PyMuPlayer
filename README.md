@@ -55,7 +55,7 @@ Ubuntu:
 
 ### About
 
-Copyright (c) 2025 Richard Knausenberger
+Copyright (c) 2026 Richard Knausenberger
 
 ---
 
